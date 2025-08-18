@@ -1,0 +1,43 @@
+{
+  "name": "hello-contract",
+  "version": "1.0.0",
+  "description": "一个输出 hello world 的智能合约项目，包含 Foundry 合约开发和 Next.js + Wagmi 前端应用",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean",
+    "lint": "pnpm -r lint",
+    "type-check": "pnpm -r type-check",
+    "contracts:compile": "pnpm --filter contracts compile",
+    "contracts:test": "pnpm --filter contracts test",
+    "contracts:deploy": "pnpm --filter contracts deploy",
+    "frontend:dev": "pnpm --filter frontend dev",
+    "frontend:build": "pnpm --filter frontend build",
+    "anvil": "anvil"
+  },
+  "keywords": [
+    "blockchain",
+    "smart-contract",
+    "foundry",
+    "nextjs",
+    "wagmi",
+    "web3",
+    "ethereum",
+    "dapp"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "typescript": "^5.9.2"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

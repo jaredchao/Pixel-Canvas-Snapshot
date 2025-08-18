@@ -1,0 +1,21 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "智能合约包 - 使用 Foundry 开发的 HelloWorld 合约",
+  "private": true,
+  "scripts": {
+    "compile": "forge build",
+    "test": "forge test",
+    "deploy:pixel": "forge script script/DeployPixelCanvas.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast",
+    "deploy:pixel:sepolia": "forge script script/DeployPixelCanvas.s.sol --rpc-url sepolia --private-key $SEPOLIA_PRIVATE_KEY --broadcast",
+    "interact:pixel": "forge script script/InteractPixelCanvas.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "test:pixel": "forge test --match-contract PixelCanvasTest",
+    "clean": "forge clean",
+    "fmt": "forge fmt",
+    "snapshot": "forge snapshot",
+    "anvil": "anvil"
+  },
+  "devDependencies": {
+    "foundry-rs/forge-std": "github:foundry-rs/forge-std"
+  }
+}

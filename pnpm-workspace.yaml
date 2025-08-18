@@ -1,0 +1,8 @@
+packages:
+  # 所有 packages 目录下的包
+  - 'packages/*'
+  # 排除 node_modules 等目录
+  - '!**/node_modules/**'
+  - '!**/dist/**'
+  - '!**/build/**'
+  - '!**/out/**'

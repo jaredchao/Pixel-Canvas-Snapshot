@@ -1,0 +1,44 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib", "dependencies"]
+test = "test"
+script = "script"
+cache = true
+cache_path = "cache"
+broadcast = "broadcast"
+allow_paths = ["../.."]
+
+# 编译器设置
+solc_version = "0.8.20"
+auto_detect_solc = false
+offline = false
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+
+# 测试设置
+fuzz = { runs = 256 }
+invariant = { runs = 256, depth = 15 }
+
+# 格式化设置
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = true
+int_types = "long"
+
+# RPC 端点配置
+[rpc_endpoints]
+localhost = "http://localhost:8545"
+sepolia = "https://ethereum-sepolia-rpc.publicnode.com"
+
+# Etherscan 配置
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+
+# Soldeer dependencies
+[dependencies]
+"@openzeppelin-contracts" = "5.0.0"
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
