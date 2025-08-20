@@ -1,25 +1,35 @@
-'use client'
 
-import React, { useState } from 'react'
+'use client'
+import { createPublicClient, http } from 'viem'
+
+import React, { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { PixelCanvas, ColorPalette } from '@/components/PixelCanvas'
 import { StatusPanel, CompactStatusPanel } from '@/components/StatusPanel'
 import { NFTGallery, CompactNFTDisplay } from '@/components/NFTGallery'
+import SnapshotGallery from '@/components/SnapshotGallery'
+import SnapshotProgress from '@/components/SnapshotProgress'
 import { ErrorAlert, ErrorToast } from '@/components/ErrorAlert'
-import { useRealtimeCanvasData, usePixelDrawing, useCanvasConfig } from '@/hooks/usePixelCanvas'
+import { useRealtimeCanvasData, usePixelDrawing, useCanvasConfig, useEventDebugger } from '@/hooks/usePixelCanvas'
+import { localhostChain } from '@/lib/wagmi'
+import pixelCanvasContract from '@/lib/pixelCanvasAbi.json'
 
 export default function Home() {
   const { isConnected, address } = useAccount()
   const [selectedColor, setSelectedColor] = useState(1) // 默认选择黑色
-  const [activeTab, setActiveTab] = useState<'canvas' | 'nft'>('canvas')
+  const [activeTab, setActiveTab] = useState<'canvas' | 'nft' | 'snapshots'>('canvas')
   const [showErrorToast, setShowErrorToast] = useState(false)
   const [userTriggeredError, setUserTriggeredError] = useState<Error | null>(null)
+  const [autoSnapshotStatus, setAutoSnapshotStatus] = useState<string | null>(null)
   
   // 获取画布数据和配置
   const { pixelChanges, cycleInfo, isLoading } = useRealtimeCanvasData()
   const { canvasSize } = useCanvasConfig()
   const { drawPixel, isDrawing, error: drawError, isConfirmed } = usePixelDrawing()
+  
+  // 事件监听调试工具
+  const { debugInfo, testEventListening } = useEventDebugger()
 
   // 处理像素点击
   const handlePixelClick = (x: number, y: number) => {
@@ -47,6 +57,52 @@ export default function Home() {
       setUserTriggeredError(null)
     }
   }, [isConfirmed, userTriggeredError])
+
+  // 监听自动快照生成事件
+  React.useEffect(() => {
+    const handleAutoGenerateSnapshot = (event: CustomEvent) => {
+      const { snapshotId } = event.detail
+      setAutoSnapshotStatus(`🎉 快照 #${snapshotId} 已自动生成！正在处理IPFS上传...`)
+      
+      // 5秒后清除通知
+      setTimeout(() => {
+        setAutoSnapshotStatus(null)
+      }, 8000)
+    }
+
+    window.addEventListener('autoGenerateSnapshot', handleAutoGenerateSnapshot as EventListener)
+    
+    return () => {
+      window.removeEventListener('autoGenerateSnapshot', handleAutoGenerateSnapshot as EventListener)
+    }
+  }, [])
+
+
+
+
+
+// const publicClient = createPublicClient({
+//   chain: localhostChain,
+//   transport: http('http://127.0.0.1:8545'),
+// })
+
+// // 在组件中添加这个测试
+// useEffect(() => {
+//   const unwatch = publicClient.watchContractEvent({
+//     address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+//     abi: pixelCanvasContract,
+//     eventName: 'PixelChanged',
+//     onLogs: logs => {
+//       console.log('🔍 Direct viem event logs:', logs)
+//     },
+//     onError: error => {
+//       console.error('🔍 Direct viem error:', error)
+//     },
+//   })
+
+//   return () => unwatch()
+// }, [])
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 px-4">
@@ -101,23 +157,33 @@ export default function Home() {
               <div className="flex bg-white rounded-lg shadow-sm p-1">
                 <button
                   onClick={() => setActiveTab('canvas')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-colors ${
                     activeTab === 'canvas'
                       ? 'bg-blue-500 text-white'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  画布
+                  🎨 画布
+                </button>
+                <button
+                  onClick={() => setActiveTab('snapshots')}
+                  className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'snapshots'
+                      ? 'bg-blue-500 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  📸 快照
                 </button>
                 <button
                   onClick={() => setActiveTab('nft')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-colors ${
                     activeTab === 'nft'
                       ? 'bg-blue-500 text-white'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  NFT
+                  🏆 NFT
                 </button>
               </div>
             </div>
@@ -171,6 +237,15 @@ export default function Home() {
                     </div>
                   )}
 
+                  {/* 自动快照生成通知 */}
+                  {autoSnapshotStatus && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-md">
+                      <p className="text-blue-800 font-medium text-center">
+                        {autoSnapshotStatus}
+                      </p>
+                    </div>
+                  )}
+
                   {/* 错误提示 */}
                   {userTriggeredError && (
                     <ErrorAlert
@@ -193,6 +268,20 @@ export default function Home() {
               </div>
             </div>
 
+            {/* 快照画廊 (移动端) */}
+            <div className={`lg:hidden ${activeTab === 'snapshots' ? 'block' : 'hidden'}`}>
+              <SnapshotGallery 
+                pixelChanges={pixelChanges.map(change => ({
+                  artist: change.artist,
+                  x: change.x,
+                  y: change.y,
+                  color: change.color,
+                  timestamp: Number(change.timestamp),
+                }))}
+                currentCycle={cycleInfo?.cycle ? Number(cycleInfo.cycle) : 1}
+              />
+            </div>
+
             {/* NFT画廊 (移动端) */}
             <div className={`lg:hidden ${activeTab === 'nft' ? 'block' : 'hidden'}`}>
               <NFTGallery />
@@ -204,10 +293,37 @@ export default function Home() {
             {/* 状态面板 */}
             <StatusPanel />
 
+            {/* 快照进度 */}
+            <SnapshotProgress compact />
+
             {/* NFT画廊 */}
             <NFTGallery />
           </div>
         </div>
+
+        {/* 调试工具 (开发环境) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">🔧 开发调试工具</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p><strong>合约地址:</strong> {debugInfo.contractAddress}</p>
+                <p><strong>事件监听:</strong> {debugInfo.eventsEnabled ? '✅ 启用' : '❌ 禁用'}</p>
+              </div>
+              <div>
+                <button
+                  onClick={testEventListening}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                >
+                  🧪 测试事件监听
+                </button>
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-gray-600">
+              打开浏览器控制台查看详细调试信息。绘制像素后应该看到 &quot;🎨 New pixel changes:&quot; 日志。
+            </div>
+          </div>
+        )}
 
         {/* 页脚信息 */}
         <div className="mt-12 text-center text-sm text-gray-500">
